@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.4-fpm
 
 # Dipendenze di sistema + Node.js 20
 RUN apt-get update && apt-get install -y \
