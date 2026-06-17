@@ -1,20 +1,33 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
-    public function checkout(Request $request)
+    public function show()
     {
-        $user = $request->user();
+        $company = auth()->user()->company;
+        return view('subscription', compact('company'));
+    }
 
-        // 'price_123...' è l'ID del prezzo creato in Stripe Dashboard
-        return $user->newSubscription('default', 'price_123456789')
+    public function renew(Request $request)
+    {
+        $company = auth()->user()->company;
+
+        // Crea o aggiorna il cliente Stripe
+        $company->createOrGetStripeCustomer();
+
+        // Crea un checkout session per il piano scelto
+        return $company->newSubscription('default', $request->plan)
             ->checkout([
-                'success_url' => route('dashboard'),
-                'cancel_url'  => route('plans'),
+                'success_url' => route('subscription.show') . '?success=true',
+                'cancel_url'  => route('subscription.show') . '?cancel=true',
             ]);
+    }
+
+    public function webhook()
+    {
+        return app('Laravel\Cashier\Http\Controllers\WebhookController')->handleWebhook();
     }
 }
