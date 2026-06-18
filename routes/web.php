@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RepairStatusController;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\LegalController;
+use App\Http\Controllers\RegistrationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -53,5 +54,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/webhook/stripe', [SubscriptionController::class, 'webhook'])
         ->name('cashier.webhook');
 });
+
+Route::get('/register', [RegistrationController::class, 'create'])->name('registration.create');
+Route::post('/register', [RegistrationController::class, 'store'])->name('registration.store');
+Route::get('/registration/success', [RegistrationController::class, 'success'])->name('registration.success');
 
 require __DIR__.'/auth.php';
