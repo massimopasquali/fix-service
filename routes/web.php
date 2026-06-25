@@ -26,7 +26,7 @@ Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/stato-riparazione', [RepairStatusController::class, 'show'])
-    ->name('repair.status');
+    ->name('repair-status');
 
 Route::get('/chi-siamo', [AboutController::class, 'index'])
     ->name('about');
@@ -72,7 +72,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Rotte pricing e Rotta per la pagina About classica
+|--------------------------------------------------------------------------
+*/
+Route::get('/about', [AboutController::class, 'index'])->name('about.index');
+
+// Rotta per la pagina dei prezzi (Abbonamenti Stripe)
+Route::get('/pricing', [AboutController::class, 'pricing'])->name('pricing');
+
+/*
+|--------------------------------------------------------------------------
 | Rotte di autenticazione Laravel Breeze
 |--------------------------------------------------------------------------
 */
 require __DIR__.'/auth.php';
+
