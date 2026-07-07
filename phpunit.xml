@@ -33,9 +33,5 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
 
-        <env name="STRIPE_SECRET" value=""/>
-        <env name="STRIPE_WEBHOOK_SECRET" value=""/>
-        <env name="CASHIER_CURRENCY" value="eur"/>
-
     </php>
 </phpunit>
