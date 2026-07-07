@@ -1,0 +1,18 @@
+[90m= [39m[34;4mStancl\Tenancy\Database\TenantCollection[39;24m {#7502
+    [34mall[39m: [
+      [34;4mApp\Models\Tenant[39;24m {#7504
+        [34mid[39m: [32m"[39m[32mtest[39m[32m"[39m,
+        [34mcompany_name[39m: [32m"[39m[32mTest SRL[39m[32m"[39m,
+        [34memail[39m: [32m"[39m[32mtest@test.com[39m[32m"[39m,
+        [34mvat_number[39m: [36mnull[39m,
+        [34mplan[39m: [32m"[39m[32mmonthly[39m[32m"[39m,
+        [34mstripe_customer_id[39m: [36mnull[39m,
+        [34mstripe_subscription_id[39m: [36mnull[39m,
+        [34mtrial_ends_at[39m: [36mnull[39m,
+        [34monboarding_completed_at[39m: [36mnull[39m,
+        [34mcreated_at[39m: [32m"[39m[32m2026-06-17 16:16:55[39m[32m"[39m,
+        [34mupdated_at[39m: [32m"[39m[32m2026-06-17 16:16:55[39m[32m"[39m,
+        [34mdata[39m: [36mnull[39m,
+      },
+    ],
+  }

@@ -7,8 +7,6 @@ use Laravel\Cashier\Billable;
 
 class Company extends Model
 {
-    use HasFactory, Billable;
-
     protected $fillable = ['name', 'vat_number', 'email', 'phone', 'address'];
 
     public function repairs()

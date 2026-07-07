@@ -17,7 +17,7 @@
                     <a href="{{ route('register') }}" class="px-6 py-3 bg-red-600 rounded-lg font-semibold hover:bg-red-700 transition">
                         Inizia gratis
                     </a>
-                    <a href="{{ route('repair.status') }}" class="px-6 py-3 border border-gray-700 rounded-lg font-semibold hover:bg-gray-800 transition">
+                    <a href="{{ route('repair-status') }}" class="px-6 py-3 border border-gray-700 rounded-lg font-semibold hover:bg-gray-800 transition">
                         Controlla riparazione
                     </a>
                 </div>
