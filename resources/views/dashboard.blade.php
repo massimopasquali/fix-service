@@ -9,9 +9,9 @@
         {{-- STATS --}}
         <div class="grid md:grid-cols-4 gap-6 mb-8">
             @foreach([
-                ['Piano attuale', auth()->user()->subscription?->stripe_price ?? 'Free'],
-                ['Stato', auth()->user()->subscribed() ? '✅ Attivo' : 'Free'],
-                ['Prossimo rinnovo', auth()->user()->subscription?->ends_at?->format('d/m/Y') ?? '-'],
+                ['Piano attuale', auth()->user()->company?->subscription?->stripe_price ?? 'Free'],
+                ['Stato', auth()->user()->company?->subscribed() ? '✅ Attivo' : 'Free'],
+                ['Prossimo rinnovo', auth()->user()->company?->subscription?->ends_at?->format('d/m/Y') ?? '-'],
                 ['Utilizzo', '42%'],
             ] as [$label, $value])
                 <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 hover:border-cyan-500/50 transition">

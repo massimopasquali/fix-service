@@ -6,26 +6,32 @@
     <div class="max-w-4xl mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold text-white mb-8">Gestione Abbonamento</h1>
 
-        @if(auth()->user()->subscribed())
+        @php
+            $company = auth()->user()->company;
+        @endphp
+
+        @if($company?->subscribed('default'))
 
             {{-- ACTIVE SUBSCRIPTION --}}
             <div class="bg-gray-900 rounded-xl border border-gray-800 p-6 mb-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-semibold text-white">Il tuo abbonamento</h2>
                     <span class="px-3 py-1 bg-green-500/20 text-green-400 text-xs rounded-full font-medium border border-green-500/30">
-                    ATTIVO
-                </span>
+                        ATTIVO
+                    </span>
                 </div>
 
                 <div class="grid md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <div class="text-sm text-gray-500">Piano</div>
-                        <div class="text-lg font-semibold text-white">{{ auth()->user()->subscription->stripe_price }}</div>
+                        <div class="text-lg font-semibold text-white">
+                            {{ $company->subscription('default')?->stripe_price ?? 'N/D' }}
+                        </div>
                     </div>
                     <div>
                         <div class="text-sm text-gray-500">Prossimo pagamento</div>
                         <div class="text-lg font-semibold text-white">
-                            {{ auth()->user()->subscription->ends_at?->format('d/m/Y') ?? 'N/D' }}
+                            {{ $company->subscription('default')?->ends_at?->format('d/m/Y') ?? 'N/D' }}
                         </div>
                     </div>
                 </div>
@@ -58,7 +64,7 @@
                                 <td class="px-4 py-3 text-white">{{ $invoice->total() }}</td>
                                 <td class="px-4 py-3">
                                     <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded">
-                                        {{ $invoice->status }}
+                                        {{ $invoice->status ?? 'Pagata' }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-right">

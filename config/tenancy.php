@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use Stancl\Tenancy\Database\Models\Domain;
-use App\Models\Tenant; // Usa il tuo modello personalizzato
 
 return [
-    'tenant_model' => Tenant::class,
+
+    'tenant_model' => \App\Models\Tenant::class,
 
     // RIMUOVI o CAMBIA l'ID generator per usare il tuo slug
     'id_generator' => null, // Usa l'ID che fornisci tu (lo slug)
@@ -27,7 +27,7 @@ return [
     ],
 
     'database' => [
-        'central_connection' => env('DB_CONNECTION', 'central'),
+        'central_connection' => env('DB_CONNECTION', 'mysql'),
         'template_tenant_connection' => null,
 
         // Configura il prefisso per i database dei tenant
