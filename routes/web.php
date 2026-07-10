@@ -11,14 +11,12 @@ use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Route;
+use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 /*
 |--------------------------------------------------------------------------
-| WEBHOOK STRIPE - DEVE ESSERE FUORI DA TUTTI I MIDDLEWARE
+| WEBHOOK STRIPE - FUORI DA TUTTI I MIDDLEWARE
 |--------------------------------------------------------------------------
-| Stripe non invia cookie/session, quindi il webhook NON può passare
-| attraverso middleware 'central', 'tenant', 'auth' o CSRF.
-| Un solo endpoint, definito UNA SOLA VOLTA.
 */
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
     ->name('stripe.webhook')
@@ -26,7 +24,7 @@ Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])
 
 /*
 |--------------------------------------------------------------------------
-| Rotte pubbliche
+| ROTTE PUBBLICHE (senza autenticazione, senza tenant)
 |--------------------------------------------------------------------------
 */
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -37,28 +35,18 @@ Route::get('/stato-riparazione', [RepairStatusController::class, 'show'])
 Route::post('/stato-riparazione/check', [RepairStatusController::class, 'check'])
     ->name('repair-status.check');
 
-Route::get('/chi-siamo', [AboutController::class, 'index'])
-    ->name('about');
-
-Route::get('/about', [AboutController::class, 'index'])
-    ->name('about.index');
-
-// Pagina prezzi (pubblica, accessibile anche da non loggati)
-Route::get('/pricing', [AboutController::class, 'pricing'])
-    ->name('pricing');
-
-Route::get('/condizioni-di-utilizzo', [LegalController::class, 'terms'])
-    ->name('legal.terms');
-
-Route::get('/privacy-policy', [LegalController::class, 'privacy'])
-    ->name('legal.privacy');
+Route::get('/chi-siamo', [AboutController::class, 'index'])->name('about');
+Route::get('/about', [AboutController::class, 'index'])->name('about.index');
+Route::get('/pricing', [AboutController::class, 'pricing'])->name('pricing');
+Route::get('/condizioni-di-utilizzo', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('/privacy-policy', [LegalController::class, 'privacy'])->name('legal.privacy');
 
 /*
 |--------------------------------------------------------------------------
 | Registrazione Azienda (dominio centrale)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['central'])->group(function () {
+Route::middleware(['web', PreventAccessFromCentralDomains::class])->group(function () {
 
     Route::prefix('azienda')->name('registration.')->group(function () {
         Route::get('/registra', [RegistrationController::class, 'create'])->name('create');
@@ -69,25 +57,12 @@ Route::middleware(['central'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Rotte Tenant (subdomain)
+| ROTTE AUTENTICATE (utente loggato + tenant inizializzato)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['tenant'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('tenant.dashboard');
-    })->name('tenant.dashboard');
+Route::middleware(['auth', 'verified', 'tenant'])->group(function () {
 
-    // Altre rotte tenant...
-});
-
-/*
-|--------------------------------------------------------------------------
-| Rotte autenticate (utente loggato)
-|--------------------------------------------------------------------------
-*/
-Route::middleware(['auth', 'verified'])->group(function () {
-
-    // Dashboard principale
+    // Dashboard
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
@@ -98,27 +73,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Gestione abbonamento
-    Route::get('/abbonamento', [SubscriptionController::class, 'show'])
-        ->name('subscription.show');
+    Route::get('/abbonamento', [SubscriptionController::class, 'show'])->name('subscription.show');
+    Route::post('/abbonamento/checkout', [SubscriptionController::class, 'checkout'])->name('subscription.checkout');
+    Route::post('/abbonamento/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+    Route::post('/abbonamento/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
 
-    Route::post('/abbonamento/checkout', [SubscriptionController::class, 'checkout'])
-        ->name('subscription.checkout');
-
-    Route::post('/abbonamento/cancel', [SubscriptionController::class, 'cancel'])
-        ->name('subscription.cancel');
-
-    Route::post('/abbonamento/resume', [SubscriptionController::class, 'resume'])
-        ->name('subscription.resume');
-
+    // Fatturazione
     Route::get('/billing', [BillingController::class, 'index'])->name('billing');
-
     Route::post('/billing/portal', [BillingController::class, 'portal'])->name('billing.portal');
-
 });
 
 /*
 |--------------------------------------------------------------------------
-| Rotte di autenticazione Laravel Breeze
+| ROTTE DI AUTENTICAZIONE Laravel Breeze
 |--------------------------------------------------------------------------
 */
 require __DIR__.'/auth.php';

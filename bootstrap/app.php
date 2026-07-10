@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'stripe/*', // Esclude tutte le rotte che iniziano con stripe/
         ]);
+        $middleware->alias([
+            'tenant' => \App\Http\Middleware\InitializeTenantByUser::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

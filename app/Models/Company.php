@@ -17,6 +17,7 @@ class Company extends Model
         'phone',
         'address',
         'stripe_id',
+        'tenant_id',
     ];
 
     protected function casts(): array
@@ -43,5 +44,9 @@ class Company extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(\Stancl\Tenancy\Database\Models\Tenant::class);
     }
 }
