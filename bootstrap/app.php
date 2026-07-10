@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => \App\Http\Middleware\InitializeTenantByUser::class,
         ]);
     })
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->alias([
+            'PreventAccessFromCentralDomains' => \App\Http\Middleware\PreventAccessFromCentralDomains::class,
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
