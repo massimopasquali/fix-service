@@ -1,4 +1,5 @@
 <?php
+// app/Models/Tenant.php
 
 namespace App\Models;
 
@@ -6,6 +7,7 @@ use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
@@ -14,18 +16,27 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     public $incrementing = false;
     protected $keyType = 'string';
 
+    /**
+     * Colonne custom della tabella `tenants`.
+     * Solo dati di tenancy, NON duplicare quelli di Company.
+     */
     public static function getCustomColumns(): array
     {
         return [
             'id',
-            'company_name',
-            'email',
-            'vat_number',
+            'company_id',
             'plan',
-            'stripe_customer_id',
-            'stripe_subscription_id',
-            'trial_ends_at',
             'onboarding_completed_at',
         ];
+    }
+
+    protected $casts = [
+        'data'                  => 'array',
+        'onboarding_completed_at' => 'datetime',
+    ];
+
+    public function company(): HasOne
+    {
+        return $this->hasOne(Company::class);
     }
 }

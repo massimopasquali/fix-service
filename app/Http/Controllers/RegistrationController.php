@@ -10,24 +10,30 @@ use Stripe\Stripe;
 
 class RegistrationController extends Controller
 {
+    /**
+     * Mostra il form di registrazione.
+     */
     public function create()
     {
         return view('auth.register-company');
     }
 
+    /**
+     * Crea la PendingCompany e avvia il checkout Stripe.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'company_name'     => 'required|string|max:255',
-            'vat_number'       => 'required|string|max:50',
-            'email'            => 'required|email|max:255',
-            'address'          => 'required|string',
-            'admin_name'       => 'required|string|max:255',
-            'admin_password'   => 'required|string|min:8|confirmed',
-            'plan'             => 'required|in:monthly,yearly',
+            'company_name'   => 'required|string|max:255',
+            'vat_number'     => 'required|string|max:50',
+            'email'          => 'required|email|max:255',
+            'address'        => 'required|string',
+            'admin_name'     => 'required|string|max:255',
+            'admin_password' => 'required|string|min:8|confirmed',
+            'plan'           => 'required|in:monthly,yearly',
         ]);
 
-        // 1. Crea SOLO PendingCompany (NO tenant, NO company)
+        // 1. Crea SOLO PendingCompany (tenant e company nascono dal webhook)
         $pending = PendingCompany::create([
             'company_name'        => $validated['company_name'],
             'email'               => $validated['email'],
@@ -36,7 +42,7 @@ class RegistrationController extends Controller
             'admin_name'          => $validated['admin_name'],
             'admin_password_hash' => Hash::make($validated['admin_password']),
             'plan'                => $validated['plan'],
-            'status'              => 'pending_payment',
+            'status'              => 'pending',
         ]);
 
         // 2. Crea sessione Stripe Checkout
@@ -49,14 +55,14 @@ class RegistrationController extends Controller
         $session = Session::create([
             'payment_method_types' => ['card'],
             'line_items' => [[
-                'price' => $price_id ?? $priceId,
+                'price'    => $priceId,
                 'quantity' => 1,
             ]],
-            'mode' => 'subscription',
+            'mode'        => 'subscription',
             'success_url' => route('registration.success', ['pending_id' => $pending->id]),
             'cancel_url'  => route('registration.create'),
             'client_reference_id' => (string) $pending->id,
-            'customer_email' => $validated['email'],
+            'customer_email'      => $validated['email'],
             'metadata' => [
                 'pending_company_id' => (string) $pending->id,
             ],
@@ -69,10 +75,13 @@ class RegistrationController extends Controller
         return redirect($session->url);
     }
 
+    /**
+     * Pagina di successo post-pagamento.
+     */
     public function success(Request $request)
     {
         $pending = PendingCompany::findOrFail($request->pending_id);
 
-        return view('auth.registration-success', compact('pending'));
+        return view('auth.success', compact('pending'));
     }
 }
