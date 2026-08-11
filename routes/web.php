@@ -46,7 +46,9 @@ Route::get('/privacy-policy', [LegalController::class, 'privacy'])->name('legal.
 | Registrazione Azienda (dominio centrale)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['web', PreventAccessFromCentralDomains::class])->group(function () {
+// Usiamo PreventAccessFromTenantDomains (se esiste nel tuo pacchetto)
+// oppure lasciamo solo 'web' se la registrazione è pubblica.
+Route::middleware(['web'])->group(function () {
 
     Route::prefix('azienda')->name('registration.')->group(function () {
         Route::get('/registra', [RegistrationController::class, 'create'])->name('create');

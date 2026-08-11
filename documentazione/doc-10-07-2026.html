@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Documentazione Tecnica - Progetto SaaS</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 40px;
+            color: #1f2937;
+            line-height: 1.6;
+            font-size: 11pt;
+        }
+        h1 { color: #4f46e5; border-bottom: 3px solid #4f46e5; padding-bottom: 10px; font-size: 24pt; }
+        h2 { color: #111827; margin-top: 35px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; font-size: 16pt; }
+        h3 { color: #374151; font-size: 13pt; margin-top: 20px; }
+        .meta { background: #f3f4f6; padding: 15px 20px; border-left: 4px solid #4f46e5; margin: 20px 0; border-radius: 4px; }
+        .meta p { margin: 4px 0; }
+        .meta strong { color: #4f46e5; }
+        code { background: #f3f4f6; padding: 2px 6px; border-radius: 3px; font-family: "Courier New", monospace; font-size: 10pt; color: #dc2626; }
+        pre { background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 9.5pt; }
+        pre code { background: transparent; color: #f9fafb; padding: 0; }
+        ol, ul { padding-left: 25px; }
+        li { margin-bottom: 6px; }
+        .env-block { background: #fef3c7; border: 1px solid #fbbf24; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 10pt; }
+        .note { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 10px 15px; margin: 15px 0; border-radius: 4px; }
+        .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 9pt; }
+        @media print {
+            body { padding: 20px; }
+            pre { page-break-inside: avoid; }
+            h2 { page-break-after: avoid; }
+        }
+    </style>
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() { window.print(); }, 500);
+        });
+    </script>
+</head>
+<body>
+
+<h1>📄 Documentazione Tecnica di Progetto</h1>
+
+<div class="meta">
+    <p><strong>Progetto:</strong> Piattaforma SaaS con Gestione Abbonamenti</p>
+    <p><strong>Data:</strong> Venerdì, 10 Luglio 2026</p>
+    <p><strong>Stack Tecnologico:</strong> Laravel (Backend), Tailwind CSS (Frontend), Stripe / Laravel Cashier (Pagamenti)</p>
+    <p><strong>Versione Documento:</strong> 1.0</p>
+</div>
+
+<h2>1. Introduzione e Architettura Generale</h2>
+<p>Il progetto è una piattaforma SaaS (Software as a Service) progettata per gestire utenti, autenticazione e abbonamenti ricorrenti. L'architettura si basa su un backend solido e sicuro in <strong>Laravel</strong>, un frontend moderno e reattivo basato su <strong>Tailwind CSS</strong>, e un sistema di fatturazione e subscription management affidato a <strong>Stripe</strong> (integrato tramite <em>Laravel Cashier</em>).</p>
+<p>L'obiettivo del flusso attuale è permettere a un utente di registrarsi, scegliere un piano tariffario, effettuare il pagamento in modo sicuro e accedere all'area riservata in base al proprio stato di abbonamento.</p>
+
+<h2>2. Flusso di Registrazione e Onboarding</h2>
+<p>Il flusso di registrazione è stato progettato per minimizzare l'attrito (friction) e garantire la sincronizzazione immediata con Stripe.</p>
+
+<h3>Step-by-Step del Flusso Utente</h3>
+<ol>
+    <li><strong>Landing Page &amp; Pricing:</strong> L'utente atterra sulla homepage, visualizza i piani tariffari e clicca su "Inizia ora" o "Registrati".</li>
+    <li><strong>Form di Registrazione:</strong> L'utente inserisce Nome, Email e Password.</li>
+    <li><strong>Creazione Utente e Stripe Customer:</strong>
+        <ul>
+            <li>Il backend crea il record nella tabella <code>users</code>.</li>
+            <li>Tramite il trait <code>Billable</code> di Cashier, viene creato automaticamente un <em>Customer</em> su Stripe e il <code>stripe_id</code> viene salvato nel database locale.</li>
+        </ul>
+    </li>
+    <li><strong>Redirect a Stripe Checkout:</strong> L'utente viene reindirizzato alla sessione di Checkout di Stripe per inserire i dati della carta di credito.</li>
+    <li><strong>Conferma Pagamento:</strong> Stripe elabora il pagamento.</li>
+    <li><strong>Webhook e Sincronizzazione:</strong> Stripe invia un evento (<code>checkout.session.completed</code>) al nostro endpoint webhook. Laravel Cashier intercetta l'evento, crea la <code>subscription</code> nel database locale e aggiorna lo stato dell'utente.</li>
+    <li><strong>Redirect al Dashboard:</strong> L'utente viene reindirizzato alla <code>/dashboard</code> con un messaggio di benvenuto e accesso alle funzionalità sbloccate dal piano scelto.</li>
+</ol>
+
+<h2>3. Definizione delle Route (Routing)</h2>
+<p>Le route sono divise per contesto (Pubblico, Autenticato, Webhook) e protette tramite Middleware.</p>
+
+<h3>3.1 Route Pubbliche (Guest)</h3>
+<p>Accessibili solo agli utenti non autenticati (Middleware <code>guest</code>).</p>
+<pre><code>// routes/web.php
+Route::middleware('guest')-&gt;group(function () {
+    Route::get('/', [HomeController::class, 'index'])-&gt;name('home');
+    Route::get('/pricing', [PricingController::class, 'index'])-&gt;name('pricing');
+
+    // Autenticazione
+    Route::get('/register', [RegisteredUserController::class, 'create'])-&gt;name('register');
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])-&gt;name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+});</code></pre>
+
+<h3>3.2 Route Protette (Autenticato)</h3>
+<p>Accessibili solo agli utenti loggati (Middleware <code>auth</code>).</p>
+<pre><code>Route::middleware('auth')-&gt;group(function () {
+    // Dashboard e Profilo
+    Route::get('/dashboard', [DashboardController::class, 'index'])-&gt;name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'edit'])-&gt;name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])-&gt;name('profile.update');
+
+    // Gestione Billing (Laravel Cashier)
+    Route::get('/billing', [BillingController::class, 'index'])-&gt;name('billing');
+    Route::post('/subscription/swap', [BillingController::class, 'swap'])-&gt;name('billing.swap');
+    Route::delete('/subscription/cancel', [BillingController::class, 'cancel'])-&gt;name('billing.cancel');
+});</code></pre>
+
+<h3>3.3 Route Webhook (Stripe)</h3>
+<p>Questa route è fondamentale per ricevere le notifiche asincrone da Stripe. È esente da CSRF e richiede la validazione della firma di Stripe.</p>
+<pre><code>use Laravel\Cashier\Http\Controllers\WebhookController;
+
+Route::post('/stripe/webhook', [WebhookController::class, 'handleWebhook']);</code></pre>
+<div class="note"><strong>Nota:</strong> È necessario aggiungere <code>/stripe/webhook</code> all'array <code>$except</code> nel middleware <code>VerifyCsrfToken</code>.</div>
+
+<h2>4. Struttura del Database (Schema)</h2>
+<p>Il database sfrutta le migrazioni native di Laravel e quelle fornite da Laravel Cashier.</p>
+
+<h3>Tabella <code>users</code></h3>
+<ul>
+    <li><code>id</code>, <code>name</code>, <code>email</code>, <code>password</code>, <code>timestamps</code></li>
+    <li><code>stripe_id</code> (string, nullable, unique)</li>
+    <li><code>pm_type</code> (string, nullable) — Tipo di carta di pagamento</li>
+    <li><code>pm_last_four</code> (string, nullable) — Ultime 4 cifre della carta</li>
+    <li><code>trial_ends_at</code> (timestamp, nullable)</li>
+</ul>
+
+<h3>Tabelle Cashier (Subscription Management)</h3>
+<ul>
+    <li><code>subscriptions</code>: Tiene traccia degli abbonamenti attivi, in prova o annullati (collegati a <code>user_id</code> e <code>stripe_id</code>).</li>
+    <li><code>subscription_items</code>: Gestisce i piani multipli o i "seat" all'interno di una singola subscription.</li>
+</ul>
+
+<h2>5. Integrazione Frontend (Tailwind CSS)</h2>
+<p>L'interfaccia utente è costruita utilizzando <strong>Tailwind CSS</strong> per garantire un design responsive, moderno e coerente.</p>
+
+<h3>Componenti Chiave</h3>
+<ul>
+    <li><strong>Layout Master (<code>app.blade.php</code>):</strong> Include il file CSS compilato, gestisce i meta tag, e definisce la struttura a griglia per la navbar e il footer.</li>
+    <li><strong>Navbar Dinamica:</strong> Mostra i link "Login" e "Registrati" per gli ospiti; mostra "Dashboard", "Billing" e "Logout" per gli utenti autenticati.</li>
+    <li><strong>Pricing Cards:</strong> Griglia responsiva (<code>grid-cols-1 md:grid-cols-3</code>) con le card dei piani. Il piano consigliato è evidenziato con classi Tailwind specifiche (es. <code>ring-2 ring-indigo-600</code>).</li>
+    <li><strong>Form di Autenticazione:</strong> Card centrata (<code>max-w-md mx-auto</code>), con input stilizzati, gestione degli errori di validazione e feedback visivo.</li>
+    <li><strong>Dashboard:</strong> Layout con sidebar laterale (su desktop) o menu hamburger (su mobile).</li>
+</ul>
+
+<h2>6. Configurazione Stripe e Ambiente</h2>
+<p>Per far funzionare il flusso, sono state configurate le seguenti variabili nel file <code>.env</code>:</p>
+<div class="env-block">
+    STRIPE_KEY=pk_test_...<br>
+    STRIPE_SECRET=sk_test_...<br>
+    STRIPE_WEBHOOK_SECRET=whsec_...<br>
+    CASHIER_CURRENCY=eur
+</div>
+
+<h3>Configurazione Webhook su Stripe Dashboard</h3>
+<p>È stato configurato un endpoint webhook su Stripe che punta a <code>https://nostro-dominio.com/stripe/webhook</code>, in ascolto per gli eventi:</p>
+<ul>
+    <li><code>checkout.session.completed</code></li>
+    <li><code>customer.subscription.updated</code></li>
+    <li><code>customer.subscription.deleted</code></li>
+    <li><code>invoice.payment_succeeded</code></li>
+    <li><code>invoice.payment_failed</code></li>
+</ul>
+
+<h2>7. Prossimi Step (Roadmap)</h2>
+<p><strong>Stato attuale del progetto:</strong> <em>Fase di Setup, Autenticazione e Integrazione Billing completata.</em></p>
+
+<h3>Prossime attività pianificate</h3>
+<ol>
+    <li><strong>Sviluppo Funzionalità Core:</strong> Creazione dei modelli e delle logiche di business specifiche del SaaS (es. creazione di "Progetti", "Workspace" o risorse limitate in base al piano).</li>
+    <li><strong>Middleware di Controllo Subscription:</strong> Creazione di un middleware custom (es. <code>subscribed:plan-pro</code>) per proteggere le route avanzate e limitare l'accesso in base al piano attivo.</li>
+    <li><strong>Gestione Errori e Fallback:</strong> Creazione di una UI per gestire i pagamenti falliti (es. redirect al Customer Portal di Stripe per aggiornare la carta).</li>
+    <li><strong>Test End-to-End:</strong> Utilizzo delle carte di test di Stripe per simulare successo, fallimento, scadenza della carta e gestione dei rimborsi.</li>
+    <li><strong>Ottimizzazione UI/UX:</strong> Aggiunta di animazioni Tailwind, skeleton loader per le pagine in fetch asincrono e implementazione della Dark Mode.</li>
+</ol>
+
+<div class="footer">
+    <p>Documento generato il 10 Luglio 2026 — Sistema di gestione del progetto</p>
+    <p>Per modifiche, aggiornare il repository e rigenerare la documentazione.</p>
+</div>
+
+</body>
+</html>
